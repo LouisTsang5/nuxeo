@@ -48,6 +48,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -118,6 +119,11 @@ public class TestAzureBinaryManager extends AbstractTestCloudBinaryManager<Azure
         // Cleanup keys
         Properties props = Framework.getProperties();
         PARAMETERS.forEach(props::remove);
+    }
+
+    @After
+    public void tearDown() throws IOException {
+        removeObjects();
     }
 
     @Override
@@ -258,7 +264,8 @@ public class TestAzureBinaryManager extends AbstractTestCloudBinaryManager<Azure
         blobInfo.length = Long.valueOf(blob.getLength());
         blobInfo.filename = "caf\u00e9 corner.txt";
         blobInfo.mimeType = "text/plain";
-        ManagedBlob mb = new SimpleManagedBlob(blobInfo);
+        blobInfo.key = digest;
+        ManagedBlob mb = new SimpleManagedBlob("unusedBlobProviderId", blobInfo);
         URI uri = binaryManager.getRemoteUri(binary.getDigest(), mb, null);
         String uriString = uri.toASCIIString();
         assertEquals(String.format("https://%s.blob.core.windows.net/%s/%s",
