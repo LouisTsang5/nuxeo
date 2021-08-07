@@ -5,8 +5,8 @@
   <artifactId>nuxeo-ecm</artifactId>
   <version>11.5-SNAPSHOT</version>
   <packaging>pom</packaging>
-  <name>Nuxeo ECM Projects</name>
-  <description>Nuxeo ECM Platform and related components.</description>
+  <name>Nuxeo ECM Projects (WCL Edition)</name>
+  <description>Nuxeo ECM Platform (WCL Edition) and related components.</description>
 
   <url>http://www.nuxeo.com/en/products</url>
   <organization>
