@@ -40,3 +40,4 @@ marketplace/
 # Helm charts
 **/*.tgz
 **/*.lock
+/wcl-docker/data/

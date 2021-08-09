@@ -6,8 +6,10 @@ services:
     container_name: nuxeo
     ports:
       - 8080:8080
+      - 5005:8787
     volumes:
       - ${PWD}/config:/config
+      - ${PWD}/data:/var/lib/nuxeo/binaries
       - ${PWD}/mysql/nuxeo.defaults:/opt/nuxeo/server/templates/mysql/nuxeo.defaults
     environment:
       - NUXEO_CONF=/config/nuxeo.conf
