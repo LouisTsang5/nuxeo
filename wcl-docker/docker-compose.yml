@@ -17,10 +17,13 @@ services:
       - wcl-network
 
   mysql:
-    image: mysql:5.7
+    image: mysql:8.0
     container_name: mysql
     ports:
       - 3306:3306
+    command: ["--log_bin_trust_function_creators=1"]
+    security_opt:
+      - seccomp:unconfined
     environment:
       - MYSQL_ROOT_PASSWORD=p@ssw0rd1
       - MYSQL_USER=nuxeo
@@ -37,6 +40,7 @@ services:
     container_name: elasticsearch
     environment:
       - discovery.type=single-node
+      - xpack.security.enabled=false
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m -Des.enforce.bootstrap.checks=true"
     ports:
       - 9200:9200
