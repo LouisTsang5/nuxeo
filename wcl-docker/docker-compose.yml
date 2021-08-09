@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   nuxeo:
-    image: nuxeo/nuxeo:1.0
+    image: wcl/nuxeo
     container_name: nuxeo
     ports:
       - 8080:8080
@@ -12,7 +12,7 @@ services:
     environment:
       - NUXEO_CONF=/config/nuxeo.conf
     networks:
-      - nuxeo-network
+      - wcl-network
 
   mysql:
     image: mysql:5.7
@@ -28,7 +28,7 @@ services:
       - mysql:/var/lib/mysql
       - mysql_config:/etc/mysql
     networks:
-      - nuxeo-network
+      - wcl-network
 
   elasticsearch:
     image: elasticsearch:7.14.0
@@ -42,12 +42,12 @@ services:
     volumes:
       - elastic:/usr/share/elasticsearch/data
     networks:
-      - nuxeo-network
+      - wcl-network
 
   multitool:
     image: praqma/network-multitool
     networks:
-      - nuxeo-network
+      - wcl-network
 
 volumes:
   mysql:
@@ -55,5 +55,5 @@ volumes:
   elastic:
 
 networks:
-  nuxeo-network:
-    name: nuxeo-network-1
+  wcl-network:
+    name: wcl-network-1
