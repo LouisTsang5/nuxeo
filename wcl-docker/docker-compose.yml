@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  nuxeo:
+    image: nuxeo/nuxeo:1.0
+    container_name: nuxeo
+    ports:
+      - 8080:8080
+    volumes:
+      - ${PWD}/config:/config
+      - ${PWD}/mysql/nuxeo.defaults:/opt/nuxeo/server/templates/mysql/nuxeo.defaults
+    environment:
+      - NUXEO_CONF=/config/nuxeo.conf
+    networks:
+      - nuxeo-network
+
+  mysql:
+    image: mysql:5.7
+    container_name: mysql
+    ports:
+      - 3306:3306
+    environment:
+      - MYSQL_ROOT_PASSWORD=p@ssw0rd1
+      - MYSQL_USER=nuxeo
+      - MYSQL_PASSWORD=password
+      - MYSQL_DATABASE=nuxeo
+    volumes:
+      - mysql:/var/lib/mysql
+      - mysql_config:/etc/mysql
+    networks:
+      - nuxeo-network
+
+  elasticsearch:
+    image: elasticsearch:7.14.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m -Des.enforce.bootstrap.checks=true"
+    ports:
+      - 9200:9200
+      - 9300:9300
+    volumes:
+      - elastic:/usr/share/elasticsearch/data
+    networks:
+      - nuxeo-network
+
+  multitool:
+    image: praqma/network-multitool
+    networks:
+      - nuxeo-network
+
+volumes:
+  mysql:
+  mysql_config:
+  elastic:
+
+networks:
+  nuxeo-network:
+    name: nuxeo-network-1

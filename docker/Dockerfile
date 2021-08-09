@@ -34,7 +34,7 @@ RUN mkdir -p /tmp/nuxeo-distribution \
 # ------------------------------------------------------------------------
 # Target stage
 FROM centos:7
-LABEL maintainer="Nuxeo <packagers@nuxeo.com>"
+LABEL maintainer="Nuxeo <support@wclsolution.com>"
 
 ARG BUILD_TAG
 ARG SCM_REF
@@ -48,12 +48,12 @@ LABEL org.nuxeo.version=$VERSION
 # Override parent ones
 LABEL org.label-schema.build-date=""
 LABEL org.label-schema.license="Apache 2.0"
-LABEL org.label-schema.name="Nuxeo Server"
-LABEL org.label-schema.vendor="Nuxeo"
+LABEL org.label-schema.name="Nuxeo Server (WCL)"
+LABEL org.label-schema.vendor="Nuxeo (WCL)"
 LABEL org.opencontainers.image.created=""
 LABEL org.opencontainers.image.licenses="Apache 2.0"
-LABEL org.opencontainers.image.title="Nuxeo Server"
-LABEL org.opencontainers.image.vendor="Nuxeo"
+LABEL org.opencontainers.image.title="Nuxeo Server (WCL Edition)"
+LABEL org.opencontainers.image.vendor="Nuxeo (WCL)"
 
 # Configure Zulu Repository
 RUN rpm --import http://repos.azulsystems.com/RPM-GPG-KEY-azulsystems \
