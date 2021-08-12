@@ -1,6 +1,5 @@
 # vim:set ft=dockerfile:
 FROM       openjdk:11-jre-slim-buster
-#FROM       openjdk:11-jdk
 MAINTAINER WCL <support@wclsolution.com>
 
 # Add needed convert tools
@@ -21,6 +20,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     netcat \
     wget \
     unzip \
+    procps \
  && rm -rf /var/lib/apt/lists/*
 
 # Remove setuid/setgid binaries from images for security

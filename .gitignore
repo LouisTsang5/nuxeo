@@ -41,3 +41,4 @@ marketplace/
 **/*.tgz
 **/*.lock
 /wcl-docker/data/
+/docker-build-openjdk-wcl/data/

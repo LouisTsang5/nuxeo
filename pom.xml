@@ -6454,10 +6454,10 @@
     </profile>
 
     <profile>
-      <id>docker-ubuntu-wcl</id>
+      <id>docker-build-openjdk-wcl</id>
       <modules>
-        <module>docker-build-ubuntu</module>
-        <module>docker-build-ubuntu-wcl</module>
+        <module>docker-build-openjdk</module>
+        <module>docker-build-openjdk-wcl</module>
       </modules>
     </profile>
 

@@ -12,7 +12,7 @@
     <groupId>org.nuxeo.docker</groupId>
     <artifactId>nuxeo-docker-build-ubuntu</artifactId>
     <version>1.0</version>
-    <name>Docker image build from JDK</name>
+    <name>Docker image build from OpenJDK</name>
     <packaging>pom</packaging>
 
     <build>
