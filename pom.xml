@@ -6454,6 +6454,14 @@
     </profile>
 
     <profile>
+      <id>docker-ubuntu-wcl</id>
+      <modules>
+        <module>docker-build-ubuntu</module>
+        <module>docker-build-ubuntu-wcl</module>
+      </modules>
+    </profile>
+
+    <profile>
       <id>sonar</id>
       <properties>
         <failIfNoTests>false</failIfNoTests>

@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  nuxeo:
+    image: wcl/nuxeo
+    container_name: nuxeo
+    ports:
+      - 8080:8080
+      - 5005:8787
+    volumes:
+      - ${PWD}/data:/var/lib/nuxeo/binaries
+      - ${PWD}/mysql/nuxeo.defaults:/opt/nuxeo/server/templates/mysql/nuxeo.defaults
+    environment:
+      - NUXEO_BINARY_STORE=/var/lib/nuxeo/binaries/binaries
+      - NUXEO_DB_TYPE=mysql
+      - NUXEO_ES_HOSTS=http://elasticsearch:9200
+      - NUXEO_ES_INDEX_NAME=nuxeo
+      - NUXEO_ES_REPLICAS=0
+      - NUXEO_ES_SHARDS=1
+      - NUXEO_TEMPLATES=sdk
+      - NUXEO_LOG=/var/log/nuxeo
+    networks:
+      - wcl-network
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    ports:
+      - 3306:3306
+    command: ["--log_bin_trust_function_creators=1"]
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - MYSQL_ROOT_PASSWORD=p@ssw0rd1
+      - MYSQL_USER=nuxeo
+      - MYSQL_PASSWORD=password
+      - MYSQL_DATABASE=nuxeo
+    volumes:
+      - mysql:/var/lib/mysql
+      - mysql_config:/etc/mysql
+    networks:
+      - wcl-network
+
+  elasticsearch:
+    image: elasticsearch:7.14.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m -Des.enforce.bootstrap.checks=true"
+    ports:
+      - 9200:9200
+      - 9300:9300
+    volumes:
+      - elastic:/usr/share/elasticsearch/data
+    networks:
+      - wcl-network
+
+  multitool:
+    image: praqma/network-multitool
+    networks:
+      - wcl-network
+
+volumes:
+  mysql:
+  mysql_config:
+  elastic:
+
+networks:
+  wcl-network:
+    name: wcl-network-1

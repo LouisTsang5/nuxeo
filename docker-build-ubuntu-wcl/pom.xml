@@ -1,0 +1,75 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.nuxeo</groupId>
+    <artifactId>nuxeo-ecm</artifactId>
+    <version>11.5-SNAPSHOT</version>
+  </parent>
+
+  <groupId>org.nuxeo.docker</groupId>
+  <artifactId>nuxeo-docker-build-ubuntu-wcl</artifactId>
+  <name>WCL Edition Nuxeo Docker Image</name>
+  <packaging>pom</packaging>
+
+  <dependencies>
+      <dependency>
+        <groupId>org.nuxeo.ecm.distribution</groupId>
+        <artifactId>nuxeo-server-tomcat</artifactId>
+        <type>zip</type>
+      </dependency>
+    <dependency>
+      <groupId>org.nuxeo.docker</groupId>
+      <artifactId>nuxeo-docker-build-ubuntu</artifactId>
+      <version>1.0</version>
+      <type>pom</type>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>copy-distrib</id>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+            <configuration>
+              <includeArtifactIds>nuxeo-server-tomcat</includeArtifactIds>
+              <outputDirectory>${project.build.directory}/distrib</outputDirectory>
+              <overWriteIfNewer>true</overWriteIfNewer>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>com.spotify</groupId>
+        <artifactId>dockerfile-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>build</goal>
+              <goal>tag</goal>
+            </goals>
+            <configuration>
+              <repository>wcl/nuxeo</repository>
+              <tag>latest</tag>
+              <buildArgs>
+                <BUILD_TAG>local-nuxeo-nuxeo</BUILD_TAG>
+                <GIT_COMMIT>built-locally</GIT_COMMIT>
+                <VERSION>latest</VERSION>
+              </buildArgs>
+              <pullNewerImage>false</pullNewerImage>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>
