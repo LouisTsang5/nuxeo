@@ -1,14 +1,10 @@
 #!/bin/bash
-set -x
+set -e
 
 NUXEO_DATA=${NUXEO_DATA:-/var/lib/nuxeo/data}
-#NUXEO_LOG=${NUXEO_LOG:-/var/log/nuxeo}
+NUXEO_LOG=${NUXEO_LOG:-/var/log/nuxeo}
 NUXEO_FORCE_CONF=${NUXEO_FORCE_CONF:-false}
 NUXEO_MPINSTALL_OPTIONS=${NUXEO_MPINSTALL_OPTIONS:---relax=false}
-
-echo $NUXEO_DATA
-echo $NUXEO_LOG
-echo $NUXEO_FORCE_CONF
 
 # Allow supporting arbitrary user id
 if ! whoami &> /dev/null; then
@@ -17,8 +13,6 @@ if ! whoami &> /dev/null; then
     echo "${NUXEO_USER:-nuxeo}:x:$(id -u):0:${NUXEO_USER:-nuxeo} user:${NUXEO_HOME}:/sbin/nologin" >> /etc/passwd
   fi
 fi
-
-echo $NUXEO_LOG
 
 if [ "$1" = 'nuxeoctl' ]; then
   if [[ ( ! -f $NUXEO_HOME/configured ) || "true" == $NUXEO_FORCE_CONF  ]]; then
@@ -77,9 +71,5 @@ EOF
   fi
 
 fi
-
-echo "Start ${NUXEO_CONF} debug"
-cat $NUXEO_CONF
-echo "END ${NUXEO_CONF} debug"
 
 exec "$@"
