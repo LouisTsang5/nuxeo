@@ -56,6 +56,9 @@ RUN chmod +x /docker-entrypoint.sh
 
 COPY --chown=1000:0 local-package/nuxeo-showcase-content-2021.0.2.zip $NUXEO_HOME/local-packages/nuxeo-showcase-content-2021.0.2.zip
 COPY --chown=1000:0 local-package/nuxeo-web-ui-marketplace-3.1.0-SNAPSHOT.zip $NUXEO_HOME/local-packages/nuxeo-web-ui-marketplace-3.1.0-SNAPSHOT.zip
+COPY --chown=1000:0 local-package/nuxeo-document-type-sample1.zip $NUXEO_HOME/local-packages/nuxeo-document-type-sample1.zip
+COPY --chown=1000:0 local-package/nuxeo-document-type-sample2.zip $NUXEO_HOME/local-packages/nuxeo-document-type-sample2.zip
+COPY --chown=1000:0 local-package/nuxeo-easyshare-package-11.5-SNAPSHOT.zip $NUXEO_HOME/local-packages/nuxeo-easyshare-package-11.5-SNAPSHOT.zip
 
 USER 1000
 RUN cat /etc/nuxeo/nuxeo.conf.template > $NUXEO_CONF
@@ -64,6 +67,9 @@ RUN echo "nuxeo.pid.dir=/var/run/nuxeo" >> $NUXEO_CONF
 RUN echo "nuxeo.data.dir=/var/lib/nuxeo/data" >> $NUXEO_CONF
 RUN $NUXEO_HOME/bin/nuxeoctl mp-install --offline --accept=true $NUXEO_HOME/local-packages/nuxeo-showcase-content-2021.0.2.zip
 RUN $NUXEO_HOME/bin/nuxeoctl mp-install --offline --accept=true $NUXEO_HOME/local-packages/nuxeo-web-ui-marketplace-3.1.0-SNAPSHOT.zip
+RUN $NUXEO_HOME/bin/nuxeoctl mp-install --offline --accept=true $NUXEO_HOME/local-packages/nuxeo-document-type-sample1.zip
+RUN $NUXEO_HOME/bin/nuxeoctl mp-install --offline --accept=true $NUXEO_HOME/local-packages/nuxeo-document-type-sample2.zip
+RUN $NUXEO_HOME/bin/nuxeoctl mp-install --offline --accept=true $NUXEO_HOME/local-packages/nuxeo-easyshare-package-11.5-SNAPSHOT.zip
 RUN rm -rf $NUXEO_HOME/local-packages
 RUN rm $NUXEO_CONF
 
@@ -72,4 +78,3 @@ WORKDIR $NUXEO_HOME
 EXPOSE 8080
 #CMD ["nuxeoctl","console"]
 ENTRYPOINT /wait-for.sh mysql:3306 -t 300 && /wait-for.sh elasticsearch:9200 -t 300 && /docker-entrypoint.sh nuxeoctl console
-

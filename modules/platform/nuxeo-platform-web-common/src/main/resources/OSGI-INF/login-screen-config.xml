@@ -8,6 +8,9 @@
         <locale>en_GB</locale>
         <locale>en_US</locale>
       </supportedLocales>
+      <removeNews>true</removeNews>
+      <logoWidth>113</logoWidth>
+      <logoHeight>20</logoHeight>
     </loginScreenConfig>
   </extension>
 </component>
