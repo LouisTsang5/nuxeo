@@ -8,10 +8,10 @@ services:
       - 8080:8080
       - 5005:8787
     volumes:
-      - ${PWD}/data:/var/lib/nuxeo/binaries
+      - ${PWD}/data:/var/lib/nuxeo/data
       - ${PWD}/mysql/nuxeo.defaults:/opt/nuxeo/server/templates/mysql/nuxeo.defaults
     environment:
-      - NUXEO_BINARY_STORE=/var/lib/nuxeo/binaries/binaries
+      - NUXEO_DATA=/var/lib/nuxeo/data
       - NUXEO_DB_TYPE=mysql
       - NUXEO_ES_HOSTS=http://elasticsearch:9200
       - NUXEO_ES_INDEX_NAME=nuxeo
