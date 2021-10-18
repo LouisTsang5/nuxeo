@@ -1,10 +1,19 @@
 #!/bin/bash
 
+# exit when any command fails
+set -e
+
+while getopts 'b:c:k:' OPT; do
+    case $OPT in
+        b) BACKUP_FILE="$OPTARG";;
+        k) DECRYPT_KEY="$OPTARG";;
+        c) RESTORE_CONF="$OPTARG";;
+    esac
+done
+
 #Variables
 SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )" #The absolution directory path of the script
-BACKUP_FILE=$1
 BACKUP_DIR=${BACKUP_FILE%%.*}
-RESTORE_CONF=$2
 DEFAULT_RESTORE_CONF=$SCRIPT_DIR/nuxeo-restore.conf
 
 #log function
@@ -38,8 +47,22 @@ if [ ! -f "$BACKUP_FILE" ]
     exit1
 fi
 
+#Check if decryption key is specified
+if [ -z "$DECRYPT_KEY" ]
+  then
+    log "No decryption key specified"
+    exit1
+fi
+
+#Check if decryption key can be found
+if [ ! -f "$DECRYPT_KEY" ]
+  then
+    log "Decryption key $DECRYPT_KEY does not exist"
+    exit1
+fi
+
 #Check if config file is specified
-if [ -z "$2" ]
+if [ -z "$RESTORE_CONF" ]
   then
     log "No configuration file specified"
     RESTORE_CONF=$DEFAULT_RESTORE_CONF
@@ -57,76 +80,68 @@ fi
 #Read config file
 log "Reading $RESTORE_CONF"
 source $RESTORE_CONF
+log "Database: $database_host:$database_port"
+log "File Storage: $file_storage_dir"
 
 #Check if nuxeo data directory exists
-if ssh $file_storage_username@$file_storage_host [ ! -d $file_storage_dir ]
+if ssh $nuxeo_app_user@$nuxeo_app_host [ -d $file_storage_dir ]
   then
-    log "Directory $file_storage_dir does not exist"
+    log "Directory $file_storage_dir exists"
+  else
+    log "Directory $file_storage_dir DOES NOT exist"
     exit1
 fi
 
-#Check if database container exists
-if [ -z "$(ssh $database_ssh_username@$database_ssh_host docker container ls -a | grep $database_container)" ]
+#Check if app server can reach database
+if ssh $nuxeo_app_user@$nuxeo_app_host nc -z $database_host $database_port
   then
-    log "Database container $database_container does not exist"
+    log "Database can be reached"
+  else
+    log "Database CANNOT be reached"
     exit1
 fi
 
-#Check if database container is running
-if [ $(ssh $database_ssh_username@$database_ssh_host docker container inspect -f '{{.State.Running}}' $database_container) != "true" ]
-  then
-    log "Database container $database_container is not running"
-    exit1
-fi
+#Unpackage backup
+log "Unpacking backup"
+BACKUP_FILE=$(realpath $BACKUP_FILE)
+BACKUP_FILE_NAME=$(basename $BACKUP_FILE) #the base filename of the backup package e.g. nuxeo-backup-202110100000.tar.gz
+BACKUP_FILE_TAG=${BACKUP_FILE_NAME%%.*} #The tag name of the backup e.g. nuxeo-backup-202110100000
+TEMP_DIR=$BACKUP_FILE_TAG
+mkdir $TEMP_DIR && tar -zxvf $BACKUP_FILE --directory $TEMP_DIR
+TEMP_DIR=$(realpath $TEMP_DIR)
+
+#Decrypt backup
+log "Decrypting backup"
+DECRYPT_KEY=$(realpath $DECRYPT_KEY)
+ENC_KEY_ENC=$TEMP_DIR/$BACKUP_FILE_TAG$encrypted_key_extension              #The encrypted encryption key
+ENC_KEY=$TEMP_DIR/$BACKUP_FILE_TAG$key_extension                            #The decrypted encryption key
+BACKUP_PACK_ENC=$TEMP_DIR/$BACKUP_FILE_TAG$encrypted_backup_pack_extension  #The encrypted backup package
+BACKUP_PACK=$TEMP_DIR/$BACKUP_FILE_TAG$backup_pack_extension                #The decrypted backup package
+openssl rsautl -decrypt -in $ENC_KEY_ENC -out $ENC_KEY -inkey $DECRYPT_KEY
+openssl enc -$backup_encryption_cipher -in $BACKUP_PACK_ENC -out $BACKUP_PACK -d -pass pass:$(cat $ENC_KEY) -pbkdf2
 
 #Unzip backup file
 log "Decompressing backup file"
-tar -zxf $BACKUP_FILE
+tar -zxf $BACKUP_PACK --directory $TEMP_DIR
 
 #Restore database
 log "Restoring database"
-cat $BACKUP_DIR/$backup_database_file | ssh $database_ssh_username@$database_ssh_host docker exec -i $database_container /usr/bin/mysql -u $database_username --password=$database_password $database_name
+cat $TEMP_DIR/$backup_database_file | ssh $nuxeo_app_user@$nuxeo_app_host mysql -h $database_host --port $database_port -u $database_username --password=$database_password $database_name
 log "Database restoration Completed"
 
 #Restore data files
 log "Restoring data files"
-log "Sending file data to storage"
-scp -r $BACKUP_DIR/$backup_nuxeo_data_package $file_storage_username@$file_storage_host:${file_storage_dir%/}/..
 log "Removing current file data"
-ssh $file_storage_username@$file_storage_host rm -r $file_storage_dir/*
+ssh $nuxeo_app_user@$nuxeo_app_host rm -r ${file_storage_dir%/}/*
 log "Unpacking new file data"
-ssh $file_storage_username@$file_storage_host tar -zxvf ${file_storage_dir%/}/../$backup_nuxeo_data_package -C ${file_storage_dir%/}/..
-log "Removing package"
-ssh $file_storage_username@$file_storage_host rm ${file_storage_dir%/}/../$backup_nuxeo_data_package
+scp -Cr $TEMP_DIR/$backup_nuxeo_data_package/* $nuxeo_app_user@$nuxeo_app_host:${file_storage_dir%/}/
 log "File storage restoration completed"
 
-#Start nuxeo docker-compose to regen index
-log "Starting nuxeo docker compose"
-ssh -q $file_storage_username@$file_storage_host "cd $(dirname $nuxeo_docker_compose) && docker-compose up -d"
-log "Nuxeo docker compose started"
+#Clean up temp files
+log "removing temp files"
+rm -r $TEMP_DIR
 
-#Try to connect to nuxeo
-TRY_START_SEC=$SECONDS
-log "Trying to connect to nuxeo"
-until $(curl --output /dev/null --silent --head --fail $nuxeo_host_url); do
-  #If timed out. Ask the user to manual reindex
-  if [ $(($SECONDS - $TRY_START_SEC)) -gt $reindex_trial_timeout ]
-    then
-      log "Failed to connect to nuxeo. Please run the below command to regenerate elastic search index when nuxeo is up"
-      log "curl -X POST \"$nuxeo_host_url/nuxeo/site/automation/Elasticsearch.Index\" -u $nuxeo_admin_username:$nuxeo_admin_password -H 'content-type: application/json' -d '{\"params\":{},\"context\":{}}'"
-      exit1
-  fi
-
-  log "Connection failed ($(($reindex_trial_timeout - $(($SECONDS - $TRY_START_SEC)))) seconds before timeout)"
-  sleep $reindex_trial_interval
-done
-log "Connection established"
-
-#Regeneration Elastic Search Index
-log "Sending request to regenerate elasticsearch index"
-curl -X POST "$nuxeo_host_url/nuxeo/site/automation/Elasticsearch.Index" -u $nuxeo_admin_username:$nuxeo_admin_password -H 'content-type: application/json' -d '{"params":{},"context":{}}'
-log "Done"
-
-#Completed
-log "Nuxeo restoration completed. Nuxeo can be stopped once the elasticsearch index has been regenerated"
+#Ask user to regenerate index
+log "Nuxeo restoration completed. Please run the below command to regenerate elastic search index when nuxeo is up"
+log "curl -X POST \"$nuxeo_app_url/nuxeo/site/automation/Elasticsearch.Index\" -u $nuxeo_app_admin_username:$nuxeo_app_admin_password -H 'content-type: application/json' -d '{\"params\":{},\"context\":{}}'"
 exit0
