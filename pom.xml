@@ -6502,6 +6502,17 @@
 
   <repositories>
     <repository>
+      <id>wcl-nexus</id>
+      <url>http://132.148.160.59:8081/repository/maven-public/</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <updatePolicy>always</updatePolicy>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
+    <repository>
       <id>maven-public</id>
       <url>https://packages.nuxeo.com/repository/maven-public/</url>
       <releases>
@@ -6538,6 +6549,17 @@
   </repositories>
 
   <pluginRepositories>
+    <pluginRepository>
+      <id>wcl-nexus</id>
+      <url>http://132.148.160.59:8081/repository/maven-public/</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <updatePolicy>always</updatePolicy>
+        <enabled>true</enabled>
+      </snapshots>
+    </pluginRepository>
     <pluginRepository>
       <id>maven-public</id>
       <url>https://packages.nuxeo.com/repository/maven-public/</url>
