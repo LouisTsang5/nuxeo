@@ -82,15 +82,6 @@ if ssh $backup_server_user@$backup_server_host [ -d $backup_server_location ]
     exit1
 fi
 
-#Check if encryption key exists
-if [ -f $encryption_key ]
-  then
-    log "Encryption key found"
-  else
-    log "Encryption key NOT found"
-    exit1
-fi
-
 #backup database
 log "Backing up database"
 backup_server_location=${backup_server_location%/} #The dir location of backup server without the trailing "/"
@@ -105,33 +96,11 @@ scp -Cr $file_storage_dir $backup_server_user@$backup_server_host:$backup_server
 log "File storage backup completed"
 
 #pack the backup files
-log "Compressing backup"
+log "Packing backup"
 BACKUP_PACK=$backup_server_location/$BACKUP_FILE_NAME$backup_pack_extension
-ssh $backup_server_user@$backup_server_host tar -zcf $BACKUP_PACK -C $backup_server_location $(basename $TEMP_DB_BAK) $(basename $TEMP_FILE_BAK) --remove-files
-
-#encrypt backup package
-log "Generating encryption key for backup package"
-BACKUP_PACK_ENC=$backup_server_location/$BACKUP_FILE_NAME$encrypted_backup_pack_extension
-TEMP_ENC_KEY=$backup_server_location/$BACKUP_FILE_NAME$key_extension
-ssh $backup_server_user@$backup_server_host "uuidgen | sha256sum | head -c 64 > $TEMP_ENC_KEY"
-
-log "Encrypting backup file"
-ssh $backup_server_user@$backup_server_host openssl enc -$backup_encryption_cipher -in $BACKUP_PACK -out $BACKUP_PACK_ENC -e -pass pass:\$\(cat $TEMP_ENC_KEY\) -pbkdf2
-
-log "Encrypting encryption key"
-TEMP_PUB_KEY=$backup_server_location/$(uuidgen) #Copy public key to backup server
-scp $encryption_key $backup_server_user@$backup_server_host:$TEMP_PUB_KEY
-
-ENC_KEY_ENC=${TEMP_ENC_KEY%%.*}$encrypted_key_extension #Encrypted encryption key
-ssh $backup_server_user@$backup_server_host openssl rsautl -encrypt -pubin -inkey $TEMP_PUB_KEY -in $TEMP_ENC_KEY -out $ENC_KEY_ENC
-
-#Packing backup files
-log "Packing files"
-ssh $backup_server_user@$backup_server_host "tar -zcvf $BACKUP_PACK -C $backup_server_location $(basename $ENC_KEY_ENC) $(basename $BACKUP_PACK_ENC) --remove-files"
-
-#Clean up temp files
-log "Cleaning temp files"
-ssh $backup_server_user@$backup_server_host "rm $TEMP_PUB_KEY && rm $TEMP_ENC_KEY"
+ssh $backup_server_user@$backup_server_host tar -cf $BACKUP_PACK -C $backup_server_location $(basename $TEMP_DB_BAK) $(basename $TEMP_FILE_BAK)
+ssh $backup_server_user@$backup_server_host rm $TEMP_DB_BAK
+ssh $backup_server_user@$backup_server_host rm -r $TEMP_FILE_BAK
 
 #Completed
 log "Backup file $BACKUP_PACK created in backup server $backup_server_host"
